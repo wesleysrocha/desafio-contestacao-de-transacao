@@ -1,0 +1,9 @@
+app.db
+*.db
+app.db*
+# Ignore SQLite shared-memory file
+app.db-shm
+
+# (optional) ignore related SQLite WAL and all DB artifacts
+app.db-wal
+*.db-*
