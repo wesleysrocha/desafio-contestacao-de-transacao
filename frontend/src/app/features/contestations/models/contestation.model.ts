@@ -42,11 +42,11 @@ export interface CreateContestationResponse {
 
 export interface PageResponse<T> {
   content: T[];
-  paginacao: {
-    numeroPagina: number;
-    tamanhoPagina: number;
-    totalElementos: number;
-    totalPaginas: number;
+  pagination: {
+    pageNumber: number;
+    pageSize: number;
+    totalElements: number;
+    totalPages: number;
   };
 }
 

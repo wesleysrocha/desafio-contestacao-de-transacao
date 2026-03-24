@@ -1,0 +1,12 @@
+{
+  "name": "mock-contestation-callback",
+  "version": "1.0.0",
+  "description": "Mock do sistema de contestações que recebe callbacks",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

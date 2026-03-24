@@ -3,7 +3,7 @@
     <div class="page-title" style="margin-bottom:0">
       <span>📊</span> Contestações
       <span class="text-muted" *ngIf="pageData" style="font-size:14px;font-weight:400">
-        ({{ pageData.paginacao.totalElementos }} registro(s))
+        ({{ pageData.pagination.totalElements }} registro(s))
       </span>
     </div>
     <div class="d-flex gap-2">
@@ -118,36 +118,36 @@
     </div>
 
     <!-- Paginação -->
-    <div class="pagination" *ngIf="pageData && pageData.paginacao.totalPaginas > 1">
+    <div class="pagination" *ngIf="pageData && pageData.pagination.totalPages > 1">
       <button
-        [disabled]="pageData.paginacao.numeroPagina === 0"
+        [disabled]="pageData.pagination.pageNumber === 0"
         (click)="goToPage(0)"
         title="Primeira página">
         «
       </button>
       <button
-        [disabled]="pageData.paginacao.numeroPagina === 0"
-        (click)="goToPage(pageData.paginacao.numeroPagina - 1)"
+        [disabled]="pageData.pagination.pageNumber === 0"
+        (click)="goToPage(pageData.pagination.pageNumber - 1)"
         title="Página anterior">
         ‹
       </button>
 
       <button
         *ngFor="let p of pages"
-        [class.active]="p === pageData.paginacao.numeroPagina"
+        [class.active]="p === pageData.pagination.pageNumber"
         (click)="goToPage(p)">
         {{ p + 1 }}
       </button>
 
       <button
-        [disabled]="pageData.paginacao.numeroPagina === pageData.paginacao.totalPaginas - 1"
-        (click)="goToPage(pageData.paginacao.numeroPagina + 1)"
+        [disabled]="pageData.pagination.pageNumber === pageData.pagination.totalPages - 1"
+        (click)="goToPage(pageData.pagination.pageNumber + 1)"
         title="Próxima página">
         ›
       </button>
       <button
-        [disabled]="pageData.paginacao.numeroPagina === pageData.paginacao.totalPaginas - 1"
-        (click)="goToPage(pageData.paginacao.totalPaginas - 1)"
+        [disabled]="pageData.pagination.pageNumber === pageData.pagination.totalPages - 1"
+        (click)="goToPage(pageData.pagination.totalPages - 1)"
         title="Última página">
         »
       </button>
@@ -155,8 +155,8 @@
 
     <!-- Info paginação -->
     <div *ngIf="pageData" style="text-align:center;font-size:12px;color:#888;padding:8px 0">
-      Página {{ pageData.paginacao.numeroPagina + 1 }} de {{ pageData.paginacao.totalPaginas }}
-      — {{ pageData.paginacao.totalElementos }} registro(s) total
+      Página {{ pageData.pagination.pageNumber + 1 }} de {{ pageData.pagination.totalPages }}
+      — {{ pageData.pagination.totalElements }} registro(s) total
     </div>
   </div>
 </div>

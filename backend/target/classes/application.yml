@@ -1,0 +1,85 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: prevencao-fraudes
+
+  datasource:
+    url: jdbc:sqlite:${SQLITE_PATH:app.bb}
+    driver-class-name: org.sqlite.JDBC
+
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: always
+
+# Spring Cloud AWS
+spring.cloud.aws:
+  region:
+    static: ${AWS_REGION:us-east-1}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID:test}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:test}
+  sqs:
+    endpoint: ${LOCALSTACK_ENDPOINT:http://localhost:4566}
+
+# SQS Queue names
+sqs:
+  queues:
+    contestation-requests: contestation-requests
+    contestation-requests-dlq: contestation-requests-dlq
+    contestation-results: contestation-results
+    contestation-results-dlq: contestation-results-dlq
+  max-receive-count: 3
+
+# External integrations
+integrations:
+  comm-dispatcher:
+    base-url: ${COMM_DISPATCHER_BASE_URL:http://localhost:8081}
+    timeout: 5000
+    max-retries: 3
+    retry-delay: 1000
+  contestation-callback:
+    base-url: ${CONTESTATION_CALLBACK_BASE_URL:http://localhost:8082}
+    timeout: 5000
+    max-retries: 3
+    retry-delay: 1000
+
+# Springdoc
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html
+    operationsSorter: method
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.desafio.prevencao: DEBUG
+    io.awspring.cloud: INFO
+    org.springframework.web: INFO

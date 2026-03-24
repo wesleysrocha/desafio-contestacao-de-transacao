@@ -121,7 +121,7 @@ export class ContestationListComponent implements OnInit, OnDestroy {
 
   get pages(): number[] {
     if (!this.pageData) return [];
-    return Array.from({ length: this.pageData.paginacao.totalPaginas }, (_, i) => i);
+    return Array.from({ length: this.pageData.pagination.totalPages }, (_, i) => i);
   }
 
   toggleAutoRefresh(): void {
