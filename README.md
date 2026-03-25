@@ -1,6 +1,7 @@
 # 🛡️ Desafio Prevenção a Fraudes
 
-Sistema completo de gerenciamento de **contestações de fraude**, composto por uma API REST em Java (Spring Boot), um frontend em Angular, filas assíncronas via SQS (LocalStack) e serviços externos simulados por mocks Node.js.
+Sistema completo de gerenciamento de **contestação de transações suspeitas 
+(fraudes ou golpes)**, composto por uma API REST em Java (Spring Boot), um frontend em Angular, filas assíncronas via SQS (LocalStack) e serviços externos simulados por mocks Node.js.
 
 ---
 
@@ -8,6 +9,10 @@ Sistema completo de gerenciamento de **contestações de fraude**, composto por 
 
 - [Visão Geral](#-visão-geral)
 - [Arquitetura](#-arquitetura)
+- [Funcionalidades](#-funcionalidades)
+- [Regras propostas e atingidas ](#-regras-propostas-e-atingidas)
+- [Regras adicionais incluidas:](#regras-adicionais-incluidas)
+- [Decisões tomadas](#decisoes-tomadas)
 - [Tecnologias](#-tecnologias)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Pré-requisitos](#-pré-requisitos)
@@ -38,6 +43,20 @@ O sistema permite criar, acompanhar e cancelar **contestações de fraude** de f
 
 Todo o ciclo é rastreado com audit logs de transição de status e um `correlationId` para rastreamento.
 
+## 🏗️ Diagrama deArquitetura
+
+![1](/images/diagrama%20de%20arquitetura.png)
+
+## 🏗️ Diagrama do front-end 
+
+![2](/images/diagrama%20de%20arquitetura.png)
+
+## 👤 Diagrama de caso de uso 
+![3](/images/usecase.png)
+
+## 🎲 Diagrama do banco de dados 
+![2](/images/database-diagram.png.png)
+
 ---
 ## 👾 Funcionalidades
 ## 1. criando contestacao 
@@ -55,44 +74,37 @@ Todo o ciclo é rastreado com audit logs de transição de status e um `correlat
 ## 5. cancelando contestacao por id
 ![5](/images/5cancelando_contestacao_por_id.gif)
 
-## 6. validando excecoes back-end
-![6](/images/6validando_excecoes_back.gif)
-
-## 7. lista com filtros
-![7](/images/7lista_com_filtros.gif)
-
-## 8. cancelando contestacao no back-end
+## 6. cancelando contestacao no back-end
 ![8](/images/8cancelando_no_back.gif)
 
+## 7. validando excecoes back-end
+![6](/images/6validando_excecoes_back.gif)
 
-## 🏗️ Arquitetura
+## 8. lista com filtros
+![7](/images/7lista_com_filtros.gif)
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   FRONTEND (Angular :4200)                      │
-│   Lista / Detalhe / Criação / Cancelamento de contestações      │
-└─────────────────────────┬───────────────────────────────────────┘
-                          │ HTTP (proxy :4200 → :8080)
-┌─────────────────────────▼───────────────────────────────────────┐
-│                  BACKEND (Spring Boot :8080)                    │
-│   REST API · Spring Data JPA · SQS Producer/Consumer           │
-│   Banco: SQLite (app.bb)                                        │
-└───────┬─────────────────────────────────────┬───────────────────┘
-        │ SQS Publish                          │ SQS Consume
-        ▼                                      ▼
-┌───────────────────────┐          ┌──────────────────────────────┐
-│  contestation-        │          │  contestation-results        │
-│  requests (+ DLQ)     │          │  (+ DLQ)                     │
-└───────┬───────────────┘          └──────────────┬───────────────┘
-        │ HTTP POST /api/dispatch                  │ HTTP POST /api/callback
-        ▼                                         ▼
-┌───────────────────────┐          ┌──────────────────────────────┐
-│  mock-comm-dispatcher │──SQS────▶│  mock-contestation-callback  │
-│  (Node.js :8081)      │  Publish │  (Node.js :8082)             │
-└───────────────────────┘          └──────────────────────────────┘
-             ▲
-             └──── Todos via LocalStack SQS (:4566)
-```
+## 📃 Regras propostas e atingidas 
+- [x] Enviar uma comunicação automática confirmando que a contestação foi registrada com sucesso. Ao criar uma contestação com a rota `POST /contestations` a mesma fica em status `Em andamento`.
+- [x] Enviar uma nova comunicação informando o resultado da análise da contestação. Possível ver em `Histórico de auditoria`.
+- [x] Realizar outras notificações, como o aviso de cancelamento da contestação por solicitação do cliente. É possível cancelar uma solicitação via botão no front-end. E realizando uma solicitação na rota `/contestations/{requestId}/cancel`.
+- [x] Sistema recebe chamada API REST. Gera uma resposta 
+imediata sobre o recebimento.
+- [x] temos um mock que simula a chamada por um sistema externo (`Dispatcher`) e publica o resultado na fila `contestation-results`
+- [x] SQS retorna status da mensagem foi enviada como `Em andamento` e a mesma é enfilerada. E se foi recebida como exito como `sucesso`.
+- [x] `CALLBACK_FALHA` tenta 3 vezes em casos de falha. DLQ implementdo
+- [x] possível monitorar e auditar os fluxos na tela vendo detalhes da contestação e no back, a partir da rota `/contestations/{requestId}`.
+- [x] inputs com mensagens de erro padronizadas e respostas HTTP adequadas.
+  
+## Regras adicionais incluidas
+- [x] `contestationId` obrigatório, não pode ser em branco ou duplicado. `requestId` gerado pela aplicação garante integridade entre os dados
+- [x] `amount` obrigatório, deve ser maior que `0.00`.
+
+## Decisoes tomadas
+- O banco SQLite é criado automaticamente em `backend/app.bb` na primeira execução. Foi utilizado SQLite para facilitar o desenvolvimento e ter persistência de dados. Em uma próxima versão, pode ser expandido para MySQL.
+- Opitou-se por implementar filas SQS como opção de mensageria temos quatro no total.
+- o sistema externo foi criado como mock, sendo assim, `mock-comm-dispatcher:8081/api/dispatch` aublica resultado em SQS: `contestation-results` 
+- `mock-contestation-callback:8082/api/callback` retry de 3 tentativas. Atualiza se SUCESSO ou CANCELADO.
+Grava audit log  só é concluído quando chamamos a rota `/retry`.
 
 ---
 
@@ -187,8 +199,7 @@ init-sqs
 
 
 ### 2. Backend (Spring Boot)
-Executar projeto  
-**Observação:** O banco SQLite é criado automaticamente em `backend/app.bb` na primeira execução. Foi utilizado SQLite para facilitar o desenvolvimento e ter persistência de dados. Em uma próxima versão, pode ser expandido para MySQL.
+Executar projeto  e abrir Swagger UI
 
 **URLs do backend:**
 
@@ -360,75 +371,6 @@ curl -X POST http://localhost:8080/api/v1/contestations \
 }'
 ```
 
-### Listar com filtros
-
-```bash
-# Lista básica
-curl "http://localhost:8080/api/v1/contestations?page=0&size=10"
-
-# Por status
-curl "http://localhost:8080/api/v1/contestations?status=EM_ANDAMENTO"
-
-# Por intervalo de datas
-curl "http://localhost:8080/api/v1/contestations?fromDate=2024-01-01T00:00:00&toDate=2024-12-31T23:59:59"
-```
-
-### Consultar detalhe
-
-```bash
-curl http://localhost:8080/api/v1/contestations/550e8400-e29b-41d4-a716-446655440000
-```
-
-### Cancelar
-
-```bash
-curl -X POST http://localhost:8080/api/v1/contestations/550e8400-.../cancel
-```
-
-### Reprocessar
-
-```bash
-curl -X POST http://localhost:8080/api/v1/contestations/550e8400-.../replay
-```
-
----
-
-## 🔄 Fluxo de Processamento
-
-```
-[Cliente / Frontend]
-       │
-       │ POST /api/v1/contestations
-       ▼
-[ContestationController]
-       ├─ Valida contestationId (único) e amount (> 0)
-       ├─ Persiste: status = EM_ANDAMENTO
-       ├─ Publica em SQS: contestation-requests
-       └─ Retorna 202 com requestId
-       │
-       ▼ @SqsListener (contestation-requests)
-[ContestationProcessingService]
-       ├─ Busca entity no banco
-       ├─ Se CANCELADO: ignora
-       └─ HTTP POST → mock-comm-dispatcher:8081/api/dispatch
-              │
-              │ (processamento assíncrono 0.5–2.5s, 90% sucesso)
-              └─ Publica resultado em SQS: contestation-results
-       │
-       ▼ @SqsListener (contestation-results)
-[ContestationCallbackService]
-       ├─ Busca entity no banco
-       ├─ Se SUCESSO ou CANCELADO: ignora (idempotente)
-       ├─ HTTP POST → mock-contestation-callback:8082/api/callback
-       │   (retry com backoff exponencial, 3 tentativas)
-       │   ├─ Sucesso: status = SUCESSO, lastError = null
-       │   └─ Falha: status = CALLBACK_FALHA, lastError = detalhe
-       └─ Persiste + Grava audit log
-       │
-       ▼
-[SQLite] ← status final atualizado
-```
-
 ---
 
 ## 📊 Status das Contestações
@@ -473,9 +415,6 @@ O projeto usa **SQLite embarcado**. O arquivo `backend/app.bb` é criado automat
 | `message` | TEXT | Descrição da transição |
 | `created_at` | TEXT (ISO-8601) | Data/hora da transição |
 
-**Backup:** copie `backend/app.bb`.
-**Reset:** apague `backend/app.bb` — será recriado na próxima inicialização.
-
 ---
 
 ## 📬 Mensageria SQS e DLQ
@@ -495,9 +434,6 @@ As filas são criadas automaticamente pelo `init-sqs.sh` na inicialização do D
  docker exec localstack-sqs awslocal sqs get-queue-attributes   --queue-url http://localhost:4566/000000000000/contestation-requests   --attribute-names ApproximateNumberOfMessages ApproximateNumberOfMessagesNotVisible   --region us-east-1
 
 ```
-
-
----
 
 ## 🧪 Testes
 
@@ -527,10 +463,8 @@ Os diagramas abaixo estão disponíveis na raiz do projeto:
 |---------|----------|
 | `usecase.png` | Diagrama de casos de uso |
 | `database-diagram.png` | Diagrama relacional do banco de dados |
-| `api-architecture.png` | Arquitetura interna da API com fluxo |
-| `flow-architecture.png` | Fluxo completo de processamento |
 | `api-frontend-architecture.png` | Integração API ↔ Frontend |
-| `system-architecture.png` | Arquitetura completa do sistema |
+| `usecase.png` | Caso de uso |
 
 ---
 
@@ -563,6 +497,4 @@ docker compose down && docker compose up -d
 Após uma falha no processamento, a mensagem vai direto para a DLQ após 1 tentativa.
 
 ---
-
-## ⚠️ Observações
 
