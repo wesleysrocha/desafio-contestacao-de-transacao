@@ -39,6 +39,30 @@ O sistema permite criar, acompanhar e cancelar **contestações de fraude** de f
 Todo o ciclo é rastreado com audit logs de transição de status e um `correlationId` para rastreamento.
 
 ---
+## 👾 Funcionalidades
+## 1. criando contestacao 
+![1](\images\1criando_contestacao.gif)
+
+## 2.listando contestacao por id
+![2](\images\2listando_por_id.gif)
+
+## 3. rota replay muda status sucesso
+![3](\images\3rota_replay_muda_status_sucesso.gif)
+
+## 4. listando contestacao por id com detalhes
+![4](\images\4listando_por_id_com_detalhes.gif)
+
+## 5. cancelando contestacao por id
+![5](\images\5cancelando_contestacao_por_id.gif)
+
+## 6. validando excecoes back-end
+![6](\images\6validando_excecoes_back .gif)
+
+## 7. lista com filtros
+![7](\images\7lista_com_filtros.gif)
+
+## 8. cancelando contestacao no back-end
+![8](\images\8cancelando_no_back.gif)
 
 ## 🏗️ Arquitetura
 
