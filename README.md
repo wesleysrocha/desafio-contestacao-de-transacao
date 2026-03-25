@@ -55,7 +55,7 @@ Todo o ciclo é rastreado com audit logs de transição de status e um `correlat
 ![3](/images/usecase.png)
 
 ## 🎲 Diagrama do banco de dados 
-![2](/images/database-diagram.png.png)
+![2](/images/database-diagram.png)
 
 ---
 ## 👾 Funcionalidades
