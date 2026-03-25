@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # LocalStack - SQS local
+  # ==========================================
+  localstack:
+    image: localstack/localstack:3.0
+    container_name: localstack-sqs
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - DEFAULT_REGION=us-east-1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=0
+      - SQS_MAX_RECEIVE_COUNT=${SQS_MAX_RECEIVE_COUNT:-3}
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - fraudes-network
+
+  # ==========================================
+  # Init SQS - cria filas automaticamente
+  # ==========================================
+  init-sqs:
+    image: localstack/localstack:3.0
+    container_name: init-sqs
+    depends_on:
+      localstack:
+        condition: service_healthy
+    environment:
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - AWS_DEFAULT_REGION=us-east-1
+      - SQS_MAX_RECEIVE_COUNT=${SQS_MAX_RECEIVE_COUNT:-3}
+    volumes:
+      - ./scripts/init-sqs.sh:/init-sqs.sh
+    entrypoint: ["/bin/bash", "/init-sqs.sh"]
+    networks:
+      - fraudes-network
+    restart: "no"
+
+  # ==========================================
+  # Mock - Serviço externo de disparo
+  # ==========================================
+  mock-comm-dispatcher:
+    build:
+      context: ./mocks/mock-comm-dispatcher
+      dockerfile: Dockerfile
+    container_name: mock-comm-dispatcher
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - LOCALSTACK_ENDPOINT=http://localstack:4566
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID:-test}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY:-test}
+      - RESULTS_QUEUE_URL=http://localstack:4566/000000000000/contestation-results
+    depends_on:
+      init-sqs:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8081/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - fraudes-network
+
+  # ==========================================
+  # Mock - Sistema de contestações (callback)
+  # ==========================================
+  mock-contestation-callback:
+    build:
+      context: ./mocks/mock-contestation-callback
+      dockerfile: Dockerfile
+    container_name: mock-contestation-callback
+    ports:
+      - "8082:8082"
+    environment:
+      - PORT=8082
+      # FAILURE_RATE: 0 = nunca falha, 1.0 = sempre falha (para testar CALLBACK_FALHA)
+      - FAILURE_RATE=${CALLBACK_FAILURE_RATE:-0}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8082/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - fraudes-network
+
+networks:
+  fraudes-network:
+    driver: bridge
+
+volumes:
+  localstack-data:

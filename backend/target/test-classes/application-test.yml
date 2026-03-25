@@ -1,0 +1,55 @@
+spring:
+  datasource:
+    url: jdbc:sqlite:./target/test-fraudes.bb
+    driver-class-name: org.sqlite.JDBC
+
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    default-property-inclusion: always
+
+spring.cloud.aws:
+  region:
+    static: us-east-1
+  credentials:
+    access-key: test
+    secret-key: test
+  sqs:
+    endpoint: http://localhost:4566
+    listener:
+      auto-startup: false
+
+sqs:
+  queues:
+    contestation-requests: contestation-requests
+    contestation-results: contestation-results
+
+integrations:
+  comm-dispatcher:
+    base-url: http://localhost:8081
+    max-retries: 1
+    retry-delay: 0
+  contestation-callback:
+    base-url: http://localhost:8082
+    max-retries: 1
+    retry-delay: 0
+
+logging:
+  level:
+    com.desafio.prevencao: WARN
+    io.awspring.cloud: ERROR
+    org.springframework: WARN
+    org.hibernate: WARN
